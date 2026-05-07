@@ -25,8 +25,7 @@ FALLBACK_CLIENT_IDS = [
 
 
 class SoundCloud:
-    def __init__(self, oauth_token: Optional[str] = None,
-                 forced_client_id: Optional[str] = None):
+    def __init__(self, oauth_token: Optional[str] = None):
         self.s = requests.Session()
         self.s.headers.update({
             "User-Agent": UA,
@@ -38,11 +37,6 @@ class SoundCloud:
         if oauth_token:
             self.s.headers["Authorization"] = f"OAuth {oauth_token}"
 
-        if forced_client_id:
-            # доверяем заданному вручную
-            self.client_id = forced_client_id
-            if self._client_id_works():
-                return
         # пробуем выдрать со страницы
         try:
             self._scrape_client_id()
@@ -57,10 +51,17 @@ class SoundCloud:
                 return
         raise RuntimeError(
             "Не удалось получить рабочий client_id. "
-            "SoundCloud мог обновить ключи. "
-            "Попробуй позже или задай client_id вручную в config.json "
-            "(поле \"client_id\")."
+            "SoundCloud мог обновить ключи. Попробуй позже."
         )
+
+    def user_tracks(self, user_id: int, limit: int = 50) -> list[dict]:
+        """Только загруженные пользователем треки (без репостов)."""
+        r = self.s.get(
+            f"{API}/users/{user_id}/tracks",
+            params=self._params(limit=limit),
+        )
+        r.raise_for_status()
+        return r.json().get("collection", [])
 
     # ---------- client_id ----------
     def _client_id_works(self) -> bool:

@@ -1,87 +1,53 @@
-# EGoRCL0uD
+# scrawdog
 
-> SoundCloud, stripped to the bone. No bloat. No ads. No mercy.
+Минималистичный десктоп-клиент SoundCloud на Python + customtkinter + libmpv.
 
-Unofficial SoundCloud desktop client for Windows. Python, customtkinter, libmpv.
-Frameless. Dark. Keyboard-only. Lighter than your browser tab, faster than the
-official web player will ever be.
+## Возможности
+- Поиск треков по SoundCloud
+- Воспроизведение прямо из клиента (стрим, без скачивания)
+- Прогресс-бар, перемотка, громкость, next/prev
+- Свои плейлисты и лайки (нужен OAuth токен)
+- Страница артиста по клику на ник (только его треки, без репостов)
+- Несколько тёмных/светлых тем — переключаются по `T`
 
-> **Disclaimer.** This thing hits public `api-v2.soundcloud.com` endpoints
-> with a `client_id` scraped from the web player. SC can rotate keys or
-> nuke your token whenever they feel like it. Nobody promises anything.
+## Запуск из исходников
 
-## What it does
+1. Установи Python 3.10+
+2. Скачай **libmpv-2** для Windows x64:
+   https://sourceforge.net/projects/mpv-player-windows/files/libmpv/
+   Из архива возьми `libmpv-2.dll` и положи в эту же папку.
+3. ```
+   pip install -r requirements.txt
+   python main.py
+   ```
 
-- search, stream, like, dump tracks into playlists
-- your own likes and playlists via your OAuth token
-- frameless minimal UI — no chrome, no clutter, no nonsense
-- single `.exe` for Windows (~75 MB, libmpv baked in)
-- Inno Setup installer if you're into that
+## Сборка одного .exe
 
-## Hotkeys (mouse optional, attitude required)
+1. Положи `libmpv-2.dll` в папку проекта.
+2. Запусти `build.bat`.
+3. Готовый файл: `dist\scrawdog.exe` (~70-90 МБ, всё внутри).
 
-| key | action |
-|---|---|
-| `S` / `/` | jump into search (`Esc` to escape) |
-| `Enter` | search |
-| `Q` | my playlists |
-| `E` | my likes |
-| `Space` | play / pause |
-| `←` / `→` | prev / next track |
-| `↑` / `↓` | volume |
-| `V` | toggle seek bar |
-| LMB on track | play, or pause if it's already playing |
-| RMB on track | menu: like / add to playlist |
-| drag top bar | move the window |
-| type `login` | auth dialog |
+## Установщик (Inno Setup)
 
-## Build from source
+1. Сначала собери `.exe` (см. выше).
+2. Установи [Inno Setup 6](https://jrsoftware.org/isdl.php).
+3. Запусти `build_installer.bat`.
+4. Готовый установщик: `installer\scrawdog Setup.exe`.
 
-```cmd
-pip install -r requirements.txt
-```
+## OAuth токен (для своих плейлистов и лайков)
 
-Grab `libmpv-2.dll` (x64) from
-<https://sourceforge.net/projects/mpv-player-windows/files/libmpv/>
-and drop it next to `main.py`. No, it's not in the repo. Licensing.
+SoundCloud не выдаёт публичные ключи приложений с 2021 г., поэтому
+приватные данные читаются с твоим личным токеном из браузера:
 
-```cmd
-python main.py
-```
+1. Залогинься на https://soundcloud.com
+2. F12 → **Application** → **Cookies** → `https://soundcloud.com`
+3. Скопируй значение cookie **`oauth_token`**
+   (выглядит как `2-1234567-...`)
+4. В клиенте набери на клавиатуре `login`, вставь токен, Save.
 
-## Build the `.exe`
+Токен сохраняется локально в `%APPDATA%\SCMini\config.json`.
 
-```cmd
-build.bat
-```
-
-Output: `dist\EGoRCL0uD.exe`
-
-## Build the installer
-
-Install Inno Setup 6 (<https://jrsoftware.org/isdl.php>), then:
-
-```cmd
-build_installer.bat
-```
-
-Output: `installer\EGoRCL0uD Setup.exe`
-
-## Auth
-
-For likes and playlists you need your own OAuth token from soundcloud.com:
-
-1. Open soundcloud.com in a browser, log in.
-2. F12 → Network → click any track.
-3. Find a request to `api-v2.soundcloud.com`, rip the `client_id` from the URL.
-4. F12 → Application → Cookies → copy the `oauth_token` cookie.
-5. In the client, type `login`, paste both, save.
-
-Stored at `%APPDATA%\SCMini\config.json` in plain text. If that scares you,
-this client probably isn't for you.
-
-## License
-
-Source: MIT — do whatever.
-`libmpv-2.dll` is GPL/LGPL and not in this repo. Download it yourself
-and respect its license yourself.
+## Заметки
+- `client_id` извлекается со страницы soundcloud.com автоматически
+  (так делают `scdl`, `soundcloud-lib` и др.) — от тебя ничего не нужно.
+- Это неофициальный клиент. Используй на свой риск, для личного прослушивания.

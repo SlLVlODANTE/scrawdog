@@ -13,6 +13,7 @@
   пробел     — пауза/продолжить
   S или /    — фокус в поле поиска (Esc — выйти из него)
   V          — показать/скрыть полоску перемотки внизу (25px)
+  T          — окно выбора темы
   Alt+F4     — закрыть приложение
   набрать "login" подряд — окно ввода OAuth токена
   ЛКМ по верхней полоске — перетащить окно
@@ -32,7 +33,7 @@ import customtkinter as ctk
 from player import Player
 from sc_api import SoundCloud
 
-# ---------- палитра ----------
+# ---------- палитра (значения подменяются темой) ----------
 BG       = "#121212"
 BAR      = "#2b2b2b"
 TOP_EDGE = "#1a1a1a"
@@ -41,7 +42,71 @@ MUTED    = "#9a9a9a"
 
 ROW      = "#1c1c1c"
 ROW_HOV  = "#262626"
-ROW_ACT  = "#2e2e2e"   # чуть светлее, без оранжевого
+ROW_ACT  = "#2e2e2e"
+
+# темы — открываются попапом по T
+THEMES = [
+    {"BG": "#121212", "ME": "#3b4757", "OTHER": "#1c1c1c",
+     "PANEL": "#101010", "ACCENT": "#3b4757",
+     "TEXT": "#ffffff", "MUTED": "#9aa4b2", "NAME": "default"},
+    {"BG": "#000000", "ME": "#1c1c1c", "OTHER": "#000000",
+     "PANEL": "#000000", "ACCENT": "#5a3a3a",
+     "TEXT": "#ffffff", "MUTED": "#9aa4b2", "NAME": "dark"},
+    {"BG": "#070707", "ME": "#242424", "OTHER": "#151515",
+     "PANEL": "#050505", "ACCENT": "#5A3A3A",
+     "TEXT": "#F3F3F3", "MUTED": "#A9B9C9", "NAME": "graphite"},
+    {"BG": "#11161D", "ME": "#3D4B5E", "OTHER": "#1A2028",
+     "PANEL": "#0E1117", "ACCENT": "#4B5F78",
+     "TEXT": "#F5F7FA", "MUTED": "#AFC4D8", "NAME": "blue_ash"},
+    {"BG": "#100E14", "ME": "#3E3548", "OTHER": "#1B1720",
+     "PANEL": "#0B090E", "ACCENT": "#5B4668",
+     "TEXT": "#F7F2F8", "MUTED": "#C2A9D0", "NAME": "muted_violet"},
+    {"BG": "#0D100C", "ME": "#343D30", "OTHER": "#181C16",
+     "PANEL": "#080A07", "ACCENT": "#4C573F",
+     "TEXT": "#F2F5EF", "MUTED": "#B9C7A8", "NAME": "olive_night"},
+    {"BG": "#C9C9C4", "ME": "#AEB4BA", "OTHER": "#D7D7D1",
+     "PANEL": "#BDBDB8", "ACCENT": "#8A7777",
+     "TEXT": "#181818", "MUTED": "#465160", "NAME": "soft_grey"},
+    {"BG": "#020202", "ME": "#241106", "OTHER": "#090909",
+     "PANEL": "#040404", "ACCENT": "#E06A1A",
+     "TEXT": "#F4F1ED", "MUTED": "#C87942", "NAME": "black_ember"},
+    {"BG": "#020304", "ME": "#071820", "OTHER": "#080A0C",
+     "PANEL": "#030405", "ACCENT": "#1C6F88",
+     "TEXT": "#EEF6F8", "MUTED": "#6DA9B9", "NAME": "void_cyan"},
+    {"BG": "#030202", "ME": "#1A0709", "OTHER": "#0A0707",
+     "PANEL": "#050303", "ACCENT": "#7A2028",
+     "TEXT": "#F4EEEE", "MUTED": "#B15D66", "NAME": "blood_carbon"},
+    {"BG": "#020302", "ME": "#08180D", "OTHER": "#070A07",
+     "PANEL": "#030503", "ACCENT": "#2E7A3D",
+     "TEXT": "#EEF5EF", "MUTED": "#78AE7D", "NAME": "deep_matrix"},
+]
+
+
+def theme_get(theme: dict, key: str) -> str:
+    if key in theme:
+        return theme[key]
+    fallbacks = {
+        "PANEL":  theme.get("BG", "#121212"),
+        "ACCENT": theme.get("ME", "#3b4757"),
+        "TEXT":   "#ffffff",
+        "MUTED":  "#9aa4b2",
+        "NAME":   "theme",
+    }
+    return fallbacks.get(key, "")
+
+
+def apply_theme_globals(th: dict) -> None:
+    """Подменяет глобальные цвета на основе темы."""
+    global BG, BAR, TOP_EDGE, TEXT, MUTED, ROW, ROW_HOV, ROW_ACT
+    BG       = theme_get(th, "BG")
+    BAR      = theme_get(th, "PANEL")
+    TOP_EDGE = theme_get(th, "OTHER")
+    TEXT     = theme_get(th, "TEXT")
+    MUTED    = theme_get(th, "MUTED")
+    ROW      = theme_get(th, "OTHER")
+    ROW_HOV  = theme_get(th, "ME")
+    ROW_ACT  = theme_get(th, "ACCENT")
+
 
 FONT     = "Segoe UI"
 F_BAR    = (FONT, 10)
@@ -77,13 +142,15 @@ def trim(s: str, n: int) -> str:
 # Карточка трека (без оранжевого, без иконок ▶/⏸)
 # ============================================================
 class TrackRow(ctk.CTkFrame):
-    def __init__(self, master, idx: int, track: dict, on_click, on_right=None):
+    def __init__(self, master, idx: int, track: dict, on_click,
+                 on_right=None, on_artist=None):
         super().__init__(master, fg_color=ROW, corner_radius=0, height=40)
         self.pack_propagate(False)
         self.idx = idx
         self.track = track
         self.on_click = on_click
         self.on_right = on_right
+        self.on_artist = on_artist
         self._active = False
         self._hover = False
 
@@ -97,6 +164,7 @@ class TrackRow(ctk.CTkFrame):
         self.artist_lbl = ctk.CTkLabel(
             self, text=" — " + trim(artist, 40),
             text_color=MUTED, font=F_SMALL, anchor="w",
+            cursor="hand2",
         )
         self.artist_lbl.pack(side="left")
 
@@ -105,11 +173,17 @@ class TrackRow(ctk.CTkFrame):
                                     text_color=MUTED, font=F_SMALL, width=50)
         self.dur_lbl.pack(side="right", padx=12)
 
-        for w in (self, self.title_lbl, self.artist_lbl, self.dur_lbl):
+        for w in (self, self.title_lbl, self.dur_lbl):
             w.bind("<Enter>", self._enter)
             w.bind("<Leave>", self._leave)
             w.bind("<Button-1>", self._click)
             w.bind("<Button-3>", self._right_click)
+
+        # клик по нику артиста — открыть его страницу (без репостов)
+        self.artist_lbl.bind("<Enter>", self._enter)
+        self.artist_lbl.bind("<Leave>", self._leave)
+        self.artist_lbl.bind("<Button-1>", self._artist_click)
+        self.artist_lbl.bind("<Button-3>", self._right_click)
 
     def _enter(self, _e=None):
         self._hover = True
@@ -124,6 +198,13 @@ class TrackRow(ctk.CTkFrame):
 
     def _click(self, _e=None):
         self.on_click(self.idx)
+
+    def _artist_click(self, _e=None):
+        if self.on_artist:
+            user = self.track.get("user") or {}
+            if user.get("id"):
+                self.on_artist(user)
+        return "break"
 
     def _right_click(self, e):
         if self.on_right:
@@ -147,9 +228,13 @@ class App(ctk.CTk):
     def __init__(self):
         super().__init__()
         ctk.set_appearance_mode("dark")
-        self.title("разраб егор20")
+        self.title("scrawdog")
         self.geometry("1280x720")
         self.minsize(640, 360)
+
+        self.cfg = load_cfg()
+        self._theme_idx: int = self.cfg.get("theme_idx", 0) % len(THEMES)
+        apply_theme_globals(THEMES[self._theme_idx])
         self.configure(fg_color=BG)
         # иконка окна (таскбар, Alt+Tab)
         try:
@@ -168,7 +253,6 @@ class App(ctk.CTk):
         self._drag_x = 0
         self._drag_y = 0
 
-        self.cfg = load_cfg()
         self.sc: Optional[SoundCloud] = None
         self.player = Player(on_end=self._on_track_end)
         self.player.set_volume(0.7)
@@ -178,6 +262,10 @@ class App(ctk.CTk):
         self._volume = 0.7
         self._key_buf: str = ""
         self._key_buf_ts: float = 0.0
+        self._theme_picker = None
+        # последний показанный вид — чтобы перерендерить при смене темы
+        # ("tracks", list) | ("playlists", list) | ("message", str) | None
+        self._last_view: Optional[tuple] = None
 
         self._build_ui()
         self.after(100, self._init_api)
@@ -192,14 +280,16 @@ class App(ctk.CTk):
         top = ctk.CTkFrame(self, fg_color=BAR, height=12, corner_radius=0)
         top.pack(fill="x")
         top.pack_propagate(False)
+        self.top_bar = top
 
         # для перетаскивания окна
         top.bind("<Button-1>", self._drag_start)
         top.bind("<B1-Motion>", self._drag_move)
 
         # тонкая нижняя кромка
-        ctk.CTkFrame(self, fg_color=TOP_EDGE, height=1,
-                     corner_radius=0).pack(fill="x")
+        self.top_edge_line = ctk.CTkFrame(self, fg_color=TOP_EDGE, height=1,
+                                          corner_radius=0)
+        self.top_edge_line.pack(fill="x")
 
         # поле ввода поверх бара через place — точная позиция и размер,
         # сливается с баром по цвету. По умолчанию НЕ в фокусе.
@@ -222,7 +312,8 @@ class App(ctk.CTk):
         self.placeholder = ctk.CTkLabel(
             main, text="", text_color=MUTED, font=F_BODY, justify="center",
         )
-        self.placeholder.place(relx=0.5, rely=0.5, anchor="center")
+        # пакуем — иначе при одновременном place'е placeholder'а и
+        # pack'е tracks_box контент уезжает в нижнюю половину окна
 
         self.main_area = main
         self.tracks_box: Optional[ctk.CTkScrollableFrame] = None
@@ -325,6 +416,8 @@ class App(ctk.CTk):
             self._focus_search()
         elif ks == "v":
             self._toggle_seek_bar()
+        elif ks == "t":
+            self._toggle_theme_picker()
 
     def _volume_step(self, d: float):
         self._volume = max(0.0, min(1.0, self._volume + d))
@@ -361,36 +454,45 @@ class App(ctk.CTk):
         self.after(500, self._tick_seek)
 
     # ============== список / сообщения ==============
+    def _kill_tracks_box(self):
+        # CTkScrollableFrame.destroy() удаляет только внутренний tk.Frame,
+        # а реальный _parent_frame остаётся в layout'е — поэтому каждый
+        # повторный показ списка отъедал у предыдущего половину места.
+        if self.tracks_box is None:
+            return
+        try:
+            self.tracks_box._parent_frame.destroy()
+        except Exception:
+            try: self.tracks_box.destroy()
+            except Exception: pass
+        self.tracks_box = None
+
     def _show_message(self, msg: str):
-        if self.tracks_box is not None:
-            self.tracks_box.destroy()
-            self.tracks_box = None
-        self.placeholder.configure(text=msg)
-        self.placeholder.place(relx=0.5, rely=0.5, anchor="center")
+        self._kill_tracks_box()
+        self.placeholder.configure(text=msg, text_color=MUTED)
+        try: self.placeholder.pack_forget()
+        except Exception: pass
+        self.placeholder.pack(fill="both", expand=True)
+        self._last_view = ("message", msg)
 
     def _ensure_tracks_box(self):
-        self.placeholder.place_forget()
-        if self.tracks_box is None:
-            self.tracks_box = ctk.CTkScrollableFrame(
-                self.main_area, fg_color=BG,
-                scrollbar_button_color=BAR,
-                scrollbar_button_hover_color=TOP_EDGE,
-            )
-            self.tracks_box.pack(fill="both", expand=True)
-        else:
-            for w in self.tracks_box.winfo_children():
-                w.destroy()
+        try: self.placeholder.pack_forget()
+        except Exception: pass
+        self._kill_tracks_box()
+        self.tracks_box = ctk.CTkScrollableFrame(
+            self.main_area, fg_color=BG,
+            scrollbar_button_color=BAR,
+            scrollbar_button_hover_color=TOP_EDGE,
+        )
+        self.tracks_box.pack(fill="both", expand=True)
 
     # ============== API ==============
     def _init_api(self):
         token = self.cfg.get("oauth_token")
 
-        forced_cid = self.cfg.get("client_id")
-
         def work():
             try:
-                self.sc = SoundCloud(oauth_token=token,
-                                     forced_client_id=forced_cid)
+                self.sc = SoundCloud(oauth_token=token)
             except Exception as e:
                 err = e
                 self.after(0, lambda: self._show_message(f"connection failed:\n{err}"))
@@ -401,25 +503,16 @@ class App(ctk.CTk):
         # своя двух-полевая форма (CTkInputDialog поддерживает только одно поле)
         m = ctk.CTkToplevel(self)
         m.title("Login")
-        m.geometry("420x260")
+        m.geometry("420x200")
         m.configure(fg_color=BG)
         m.attributes("-topmost", True)
         m.after(50, m.focus_force)
 
         ctk.CTkLabel(
-            m, text="Open soundcloud.com (logged in) → F12 → Network →\n"
-                    "click any track → find request to api-v2.soundcloud.com\n"
-                    "• copy 'client_id=...' value from URL\n"
-                    "• copy 'oauth_token' from Application → Cookies",
+            m, text="Open soundcloud.com (logged in) → F12 →\n"
+                    "Application → Cookies → copy 'oauth_token'",
             text_color=MUTED, font=F_SMALL, justify="left",
         ).pack(padx=14, pady=(12, 8), anchor="w")
-
-        ctk.CTkLabel(m, text="client_id", text_color=TEXT,
-                     font=F_SMALL, anchor="w").pack(fill="x", padx=14)
-        cid_var = ctk.StringVar(value=self.cfg.get("client_id", ""))
-        ctk.CTkEntry(m, textvariable=cid_var, fg_color=ROW,
-                     border_width=0, text_color=TEXT,
-                     font=F_BODY).pack(fill="x", padx=14, pady=(2, 8))
 
         ctk.CTkLabel(m, text="oauth_token", text_color=TEXT,
                      font=F_SMALL, anchor="w").pack(fill="x", padx=14)
@@ -429,10 +522,7 @@ class App(ctk.CTk):
                      font=F_BODY).pack(fill="x", padx=14, pady=(2, 12))
 
         def save():
-            cid = cid_var.get().strip()
             tok = tok_var.get().strip()
-            if cid:
-                self.cfg["client_id"] = cid
             if tok:
                 self.cfg["oauth_token"] = tok
             save_cfg(self.cfg)
@@ -524,6 +614,7 @@ class App(ctk.CTk):
 
     def _render_playlists(self, pls):
         self._ensure_tracks_box()
+        self._last_view = ("playlists", pls)
         for p in pls:
             title = p.get("title", "?")
             count = p.get("track_count") or 0
@@ -572,14 +663,41 @@ class App(ctk.CTk):
         self._ensure_tracks_box()
         self.queue = tracks
         self.rows = []
+        self._last_view = ("tracks", tracks)
         if not tracks:
             self._show_message("nothing found")
             return
         for i, t in enumerate(tracks):
             row = TrackRow(self.tracks_box, i, t, self._on_track_click,
-                           on_right=self._show_track_menu)
+                           on_right=self._show_track_menu,
+                           on_artist=self._show_user_tracks)
             row.pack(fill="x", pady=1)
             self.rows.append(row)
+        # подсветить активный трек, если он в этой выборке
+        if 0 <= self.queue_idx < len(self.rows):
+            self.rows[self.queue_idx].set_active(True)
+
+    def _show_user_tracks(self, user: dict):
+        """Открыть страницу артиста — только его треки, без репостов."""
+        if not self.sc:
+            self._show_message("connecting…")
+            return
+        uid = user.get("id")
+        uname = user.get("username") or "?"
+        if not uid:
+            return
+        self._ensure_tracks_box()
+        self._show_message(f"loading {uname}…")
+
+        def work():
+            try:
+                tracks = self.sc.user_tracks(uid, limit=50)
+            except Exception as e:
+                self.after(0, lambda: self._show_message(str(e)))
+                return
+            self.after(0, lambda: self._set_tracks(tracks))
+
+        threading.Thread(target=work, daemon=True).start()
 
     # ============== воспроизведение ==============
     def _on_track_click(self, i: int):
@@ -796,6 +914,147 @@ class App(ctk.CTk):
 
     def _drag_move(self, e):
         self.geometry(f"+{e.x_root - self._drag_x}+{e.y_root - self._drag_y}")
+
+    # ============== темы (T) ==============
+    def _apply_theme(self, idx: int):
+        idx = idx % len(THEMES)
+        self._theme_idx = idx
+        apply_theme_globals(THEMES[idx])
+        self.cfg["theme_idx"] = idx
+        try: save_cfg(self.cfg)
+        except Exception: pass
+
+        # обновить статичные виджеты
+        try: self.configure(fg_color=BG)
+        except Exception: pass
+        for w, kw in (
+            (getattr(self, "main_area", None),     {"fg_color": BG}),
+            (getattr(self, "top_bar", None),       {"fg_color": BAR}),
+            (getattr(self, "top_edge_line", None), {"fg_color": TOP_EDGE}),
+            (getattr(self, "entry", None),         {"fg_color": BAR, "text_color": TEXT}),
+            (getattr(self, "seek_bar", None),      {"fg_color": BAR}),
+            (getattr(self, "placeholder", None),   {"text_color": MUTED}),
+        ):
+            if w is not None:
+                try: w.configure(**kw)
+                except Exception: pass
+        if self.tracks_box is not None:
+            try:
+                self.tracks_box.configure(
+                    fg_color=BG, scrollbar_button_color=BAR,
+                    scrollbar_button_hover_color=TOP_EDGE,
+                )
+            except Exception: pass
+
+        # перерендер контента
+        view = self._last_view
+        if view is None:
+            return
+        kind, data = view
+        if kind == "tracks":
+            self._set_tracks(data)
+        elif kind == "playlists":
+            self._ensure_tracks_box()
+            for w in self.tracks_box.winfo_children():
+                w.destroy()
+            self._render_playlists(data)
+        elif kind == "message":
+            self._show_message(data)
+
+    def _toggle_theme_picker(self):
+        if getattr(self, "_theme_picker", None) is not None:
+            try: self._theme_picker.destroy()
+            except Exception: pass
+            self._theme_picker = None
+            return
+        self._show_theme_picker()
+
+    def _show_theme_picker(self):
+        w, h = 360, min(560, 80 + len(THEMES) * 56)
+        self.update_idletasks()
+        try:
+            x = self.winfo_rootx() + (self.winfo_width() - w) // 2
+            y = self.winfo_rooty() + (self.winfo_height() - h) // 2
+        except Exception:
+            x, y = 200, 100
+
+        m = ctk.CTkToplevel(self)
+        m.geometry(f"{w}x{h}+{max(0, x)}+{max(0, y)}")
+        m.configure(fg_color=BAR)
+        m.attributes("-topmost", True)
+        m.overrideredirect(True)
+
+        top = ctk.CTkFrame(m, fg_color=BAR, height=12, corner_radius=0)
+        top.pack(side="top", fill="x")
+        top.pack_propagate(False)
+        ctk.CTkLabel(top, text="themes", text_color=MUTED,
+                     font=F_BAR).place(relx=0.5, rely=0.5, anchor="center")
+        ctk.CTkFrame(m, fg_color=TOP_EDGE, height=1,
+                     corner_radius=0).pack(side="top", fill="x")
+
+        # перетаскивание
+        drag = {"x": 0, "y": 0}
+        def start(e):
+            drag["x"] = e.x_root - m.winfo_x()
+            drag["y"] = e.y_root - m.winfo_y()
+        def move(e):
+            m.geometry(f"+{e.x_root - drag['x']}+{e.y_root - drag['y']}")
+        top.bind("<Button-1>", start)
+        top.bind("<B1-Motion>", move)
+
+        body = ctk.CTkScrollableFrame(
+            m, fg_color=BAR, scrollbar_button_color=ROW,
+            scrollbar_button_hover_color=TOP_EDGE,
+        )
+        body.pack(fill="both", expand=True, padx=6, pady=6)
+
+        def pick(i: int):
+            self._apply_theme(i)
+            try: m.destroy()
+            except Exception: pass
+            self._theme_picker = None
+
+        for i, th in enumerate(THEMES):
+            is_cur = (i == self._theme_idx)
+            row = ctk.CTkFrame(
+                body, fg_color=theme_get(th, "ACCENT") if is_cur
+                else theme_get(th, "PANEL"),
+                corner_radius=0, height=48,
+            )
+            row.pack(fill="x", pady=2, padx=2)
+            row.pack_propagate(False)
+
+            name = theme_get(th, "NAME") or f"theme {i}"
+            ctk.CTkLabel(
+                row, text=name, text_color=theme_get(th, "TEXT"),
+                font=F_BODY, anchor="w", width=140,
+            ).pack(side="left", padx=10)
+
+            for key in ("BG", "ME", "OTHER", "ACCENT"):
+                sw = ctk.CTkFrame(row, fg_color=theme_get(th, key),
+                                  width=20, height=20, corner_radius=0)
+                sw.pack(side="left", padx=3, pady=14)
+                sw.pack_propagate(False)
+                sw.bind("<Button-1>", lambda _e, idx=i: pick(idx))
+
+            row.bind("<Button-1>", lambda _e, idx=i: pick(idx))
+            for child in row.winfo_children():
+                child.bind("<Button-1>", lambda _e, idx=i: pick(idx))
+
+        def on_t(_e=None):
+            try: m.destroy()
+            except Exception: pass
+            self._theme_picker = None
+            return "break"
+
+        def on_esc(_e=None):
+            return on_t()
+
+        m.bind("<KeyPress-t>", on_t)
+        m.bind("<KeyPress-T>", on_t)
+        m.bind("<Escape>", on_esc)
+        m.after(60, m.focus_force)
+        self._theme_picker = m
 
     def _on_close(self):
         try:

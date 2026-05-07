@@ -1,7 +1,7 @@
 @echo off
 chcp 65001 >nul
 
-if not exist "dist\EGoRCL0uD.exe" (
+if not exist "dist\scrawdog.exe" (
     echo [!] Build .exe first: run build.bat
     pause
     exit /b 1
@@ -29,6 +29,6 @@ if errorlevel 1 (
 
 echo.
 echo ===========================================
-echo  Done!  installer\EGoRCL0uD Setup.exe
+echo  Done!  installer\scrawdog Setup.exe
 echo ===========================================
 pause

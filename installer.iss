@@ -1,16 +1,16 @@
-; Inno Setup script для SC Mini
+; Inno Setup script для scrawdog
 ; Скомпилировать: ISCC.exe installer.iss
 
 [Setup]
-AppName=EGoRCL0uD
+AppName=scrawdog
 AppVersion=1.0
 AppPublisher=разраб егор20
-AppId={{8E3F1A8C-2B4D-4F8A-9E1C-7D5B3A9F1234}
-DefaultDirName={autopf}\EGoRCL0uD
-DefaultGroupName=EGoRCL0uD
-UninstallDisplayIcon={app}\EGoRCL0uD.exe
+AppId={{5A8C1F2E-3D7B-4E9A-8F1C-9B2D4A6F5678}
+DefaultDirName={autopf}\scrawdog
+DefaultGroupName=scrawdog
+UninstallDisplayIcon={app}\scrawdog.exe
 OutputDir=installer
-OutputBaseFilename=EGoRCL0uD Setup
+OutputBaseFilename=scrawdog Setup
 SetupIconFile=icon.ico
 Compression=lzma2
 SolidCompression=yes
@@ -30,12 +30,12 @@ Name: "russian"; MessagesFile: "compiler:Languages\Russian.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
 
 [Files]
-Source: "dist\EGoRCL0uD.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "dist\scrawdog.exe"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
-Name: "{group}\EGoRCL0uD"; Filename: "{app}\EGoRCL0uD.exe"
-Name: "{group}\{cm:UninstallProgram,EGoRCL0uD}"; Filename: "{uninstallexe}"
-Name: "{commondesktop}\EGoRCL0uD"; Filename: "{app}\EGoRCL0uD.exe"; Tasks: desktopicon
+Name: "{group}\scrawdog"; Filename: "{app}\scrawdog.exe"
+Name: "{group}\{cm:UninstallProgram,scrawdog}"; Filename: "{uninstallexe}"
+Name: "{commondesktop}\scrawdog"; Filename: "{app}\scrawdog.exe"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\EGoRCL0uD.exe"; Description: "{cm:LaunchProgram,EGoRCL0uD}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\scrawdog.exe"; Description: "{cm:LaunchProgram,scrawdog}"; Flags: nowait postinstall skipifsilent
