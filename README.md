@@ -10,6 +10,8 @@ official web player will ever be.
 > with a `client_id` scraped from the web player. SC can rotate keys or
 > nuke your token whenever they feel like it. Nobody promises anything.
 
+<img width="512" height="512" alt="Screenshot 2026-05-07 at 03-41-19 Edward Skeletrix - BOMYE (ZAYTOVEN)One Take   by taht internet persona" src="https://github.com/user-attachments/assets/c414297a-8582-4711-aac3-66f7e7b381d7" />
+
 ## What it does
 
 - search, stream, like, dump tracks into playlists
